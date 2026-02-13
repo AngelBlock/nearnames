@@ -1,5 +1,5 @@
 import 'regenerator-runtime/runtime';
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import * as nearAPI from 'near-api-js';
 import localStorage from 'local-storage';
 import {HashRouter as Router, NavLink, Redirect, Route, Switch} from 'react-router-dom';
@@ -8,7 +8,7 @@ import Lots from './components/Lots';
 import ProfilePage from './components/Profile';
 import LogoutIcon from '@mui/icons-material/Logout';
 import CreateOffer from "./components/CreateOffer";
-import {nearToFloor, renderName, withTimeout} from "./utils";
+import {nearToFloor, renderName, withTimeout, makeContractProxy} from "./utils";
 import AboutPage from "./components/About";
 import ConfirmContextProvider from "./Providers/ConfirmContextProvider";
 import ModalConfirm from "./components/Confirm";
@@ -17,16 +17,29 @@ import { BrowserView, MobileView, isBrowser, isMobile } from 'react-device-detec
 import MobileNav from "./components/MobileNav";
 import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
 import NetworkSelect from "./components/NetworkSelect";
+import { useWalletSelector } from "@near-wallet-selector/react-hook";
 
 function App (props) {
 
-  const lsPrevKeys = props.nearConfig.contractName + ':v01:' + 'prevKeys';
-  const lsLotAccountId = props.nearConfig.contractName + ':v01:' + 'lotAccountId';
+  const nearConfig = props.nearConfig;
+  const legacyNear = props.legacyNear;
+  const legacyWallet = props.legacyWallet;
+
+  const {
+    signedAccountId,
+    signIn,
+    signOut: walletSelectorSignOut,
+    viewFunction,
+    callFunction,
+    getBalance: wsGetBalance,
+  } = useWalletSelector();
+
+  const lsPrevKeys = nearConfig.contractName + ':v01:' + 'prevKeys';
+  const lsLotAccountId = nearConfig.contractName + ':v01:' + 'lotAccountId';
 
   const [connected, setConnected] = useState(false);
   const [showMobileNav, setShowMobileNav] = useState(false);
-  const [signedAccount, setSignedAccount] = useState(props.currentUser && props.currentUser.accountId);
-  const [signedAccountBalance, setSignedAccountBalance] = useState(props.currentUser && props.currentUser.balance);
+  const [signedAccountBalance, setSignedAccountBalance] = useState(null);
 
   const [offerProcessState, setOfferProcessState] = useState({
     offerFinished: false,
@@ -38,18 +51,36 @@ function App (props) {
 
   const [offerProcessOutput, setOfferProcessOutput] = useState([]);
 
+  // Build contract proxy using wallet-selector functions
+  const contract = useMemo(
+    () => makeContractProxy(nearConfig.contractName, viewFunction, callFunction),
+    [nearConfig.contractName, viewFunction, callFunction]
+  );
+
   useEffect(async () => {
     await initOffer();
     setConnected(true);
   }, []);
 
+  // Update balance when signed account changes
+  useEffect(async () => {
+    if (signedAccountId) {
+      const balance = await getBalance(signedAccountId);
+      setSignedAccountBalance(balance);
+    } else {
+      setSignedAccountBalance(null);
+    }
+  }, [signedAccountId]);
+
   const updateBalance = async () => {
-    setSignedAccountBalance(await getBalance(signedAccount));
+    if (signedAccountId) {
+      setSignedAccountBalance(await getBalance(signedAccountId));
+    }
   }
 
   const getBalance = async (accountId) => {
     try {
-      const account = await props.near.account(accountId);
+      const account = await legacyNear.account(accountId);
       const balance = await account.getAccountBalance();
       return balance.available;
     } catch (e) {
@@ -57,23 +88,17 @@ function App (props) {
     }
   }
 
-  const signIn = () => {
-    props.wallet.requestSignIn(
-      props.nearConfig.contractName,
-      'Nearnames',
-      window.location.origin + window.location.pathname
-    );
-  };
-
-  const signOut = async (withReload) => {
-    await props.wallet.signOut();
-    setSignedAccount('');
+  const handleSignOut = async (withReload) => {
+    await walletSelectorSignOut();
     withReload && window.location.replace(window.location.origin + window.location.pathname);
   };
 
   const initOffer = async() => {
 
-    if (!signedAccount) {
+    // Check if there's a legacy wallet signed in for the offer flow
+    const legacySignedAccount = legacyWallet.getAccountId();
+
+    if (!legacySignedAccount) {
       setOfferProcessState(offerProcessState => ({...offerProcessState, ...{offerActive: false}}));
       return;
     }
@@ -84,7 +109,7 @@ function App (props) {
       return;
     }
 
-    if (signedAccount !== lotAccountId) {
+    if (legacySignedAccount !== lotAccountId) {
       localStorage.remove(lsLotAccountId);
       const newState = {
         offerFinished: true,
@@ -93,12 +118,12 @@ function App (props) {
         offerFailureReason: `wrong account authenticated, expected ${lotAccountId}, please try lot offer again`,
       };
       setOfferProcessState(offerProcessState => ({...offerProcessState, ...newState}));
-      signOut();
+      legacyWallet.signOut();
       return;
     }
 
     // should never happen
-    const offerData = JSON.parse(localStorage.get(props.nearConfig.contractName + ':lotOffer: ' + signedAccount));
+    const offerData = JSON.parse(localStorage.get(nearConfig.contractName + ':lotOffer: ' + legacySignedAccount));
     if (!offerData) {
       console.log(`failed to parse lot offer data`);
       localStorage.remove(lsLotAccountId);
@@ -109,22 +134,22 @@ function App (props) {
         offerFailureReason: 'failed to parse lot offer data, please try lot offer again',
       };
       setOfferProcessState(offerProcessState => ({...offerProcessState, ...newState}));
-      signOut();
+      legacyWallet.signOut();
       return;
     }
 
     try {
 
-      const account = await withTimeout(props.near.account(signedAccount));
+      const account = await withTimeout(legacyNear.account(legacySignedAccount));
 
       setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'geting access keys']);
 
-      const lastKey = (await withTimeout(props.wallet._keyStore.getKey(props.nearConfig.networkId, signedAccount))).getPublicKey().toString();
+      const lastKey = (await withTimeout(legacyWallet._keyStore.getKey(nearConfig.networkId, legacySignedAccount))).getPublicKey().toString();
 
-      const accessKeys = await withTimeout(props.wallet.account().getAccessKeys());
+      const accessKeys = await withTimeout(legacyWallet.account().getAccessKeys());
 
       console.log('all keys', accessKeys);
-      console.log('all local keys', props.wallet._authData.allKeys);
+      console.log('all local keys', legacyWallet._authData.allKeys);
       console.log('last key', lastKey);
 
       setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'fetching contract']);
@@ -136,15 +161,15 @@ function App (props) {
 
       await withTimeout(account.deployContract(new Uint8Array(buf)));
 
-      const contractLock = await withTimeout(new nearAPI.Contract(account, signedAccount, {
+      const contractLock = await withTimeout(new nearAPI.Contract(account, legacySignedAccount, {
         viewMethods: [],
         changeMethods: ['lock'],
-        sender: signedAccount
+        sender: legacySignedAccount
       }));
 
       setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'Deploying done. Initializing contract...']);
       console.log('Deploying done. Initializing contract...');
-      console.log(await withTimeout(contractLock.lock(Buffer.from('{"owner_id":"' + props.nearConfig.contractName + '"}'))));
+      console.log(await withTimeout(contractLock.lock(Buffer.from('{"owner_id":"' + nearConfig.contractName + '"}'))));
 
       setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'Init is done.']);
       console.log('Init is done.');
@@ -153,10 +178,10 @@ function App (props) {
 
       setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'Create lot offer.']);
 
-      const lot = await withTimeout(props.contract.lot_get({lot_id: lotAccountId}))
+      const lot = await withTimeout(contract.lot_get({lot_id: lotAccountId}))
 
       if (!lot) {
-        await withTimeout(props.contract.lot_offer(offerData));
+        await withTimeout(contract.lot_offer(offerData));
       }
 
       for (let index = 0; index < accessKeys.length; index++) {
@@ -174,16 +199,16 @@ function App (props) {
       setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'deleting done']);
       console.log('deleting ', lastKey, 'done');
 
-      localStorage.remove(props.nearConfig.contractName + ':lotOffer: ' + signedAccount);
+      localStorage.remove(nearConfig.contractName + ':lotOffer: ' + legacySignedAccount);
       localStorage.remove(lsLotAccountId);
       const newState = {
         offerFinished: true,
         offerSuccess: true,
         offerActive: true,
-        offerSuccessMessage: `Account ${signedAccount} is now on sale. Log in as ${offerData.seller_id} to see it on your profile and be able collect rewards as soon as the first bid is made.`
+        offerSuccessMessage: `Account ${legacySignedAccount} is now on sale. Log in as ${offerData.seller_id} to see it on your profile and be able collect rewards as soon as the first bid is made.`
       };
       setOfferProcessState(offerProcessState => ({...offerProcessState, ...newState}));
-      signOut();
+      legacyWallet.signOut();
     } catch (e) {
       console.log('Error', e)
       let offerFailureReason = '';
@@ -205,14 +230,18 @@ function App (props) {
 
   const passProps = {
     connected,
-    signedAccount,
+    signedAccount: signedAccountId,
     signedAccountBalance,
-    ...props
+    contract,
+    nearConfig,
+    near: legacyNear,
   };
 
   const offerProps = {
     lsPrevKeys,
     lsLotAccountId,
+    wallet: legacyWallet,
+    near: legacyNear,
   }
 
   return (
@@ -231,7 +260,7 @@ function App (props) {
                 <li className='nav-item'>
                   <NavLink activeClassName='active' className='nav-link' aria-current='page' to='/lots'>Lots</NavLink>
                 </li>
-              { signedAccount && (<li className='nav-item'>
+              { signedAccountId && (<li className='nav-item'>
                   <NavLink activeClassName='active' className='nav-link' aria-current='page'
                         to='profile'>Profile</NavLink>
                 </li>)}
@@ -240,17 +269,17 @@ function App (props) {
                 </li>
               </ul>
             </BrowserView>}
-            <CreateOffer {...{...passProps, ...offerProps}}/>
+            <CreateOffer {...{...passProps, ...offerProps, signedAccount: signedAccountId}}/>
             { <BrowserView>
               { !connected ? (
                   <div className="auth">
                     <span className='spinner' role='status' aria-hidden='true'>Connecting...</span>
                   </div>
-                ) : signedAccount && !offerProcessState.offerActive
+                ) : signedAccountId && !offerProcessState.offerActive
                 ? <div className="auth">
                     <strong className="balance near-icon">{nearToFloor(signedAccountBalance) || '-'}</strong>
-                    {renderName(signedAccount)}
-                    <a className="icon logout" onClick={() => signOut(true)}><LogoutIcon/></a>
+                    {renderName(signedAccountId)}
+                    <a className="icon logout" onClick={() => handleSignOut(true)}><LogoutIcon/></a>
                   </div>
                 : <div className="auth"><button className="login" onClick={signIn}>Log in</button></div>
               }
@@ -263,7 +292,7 @@ function App (props) {
               >
                 <MenuRoundedIcon />
               </IconButton>
-              {showMobileNav && <MobileNav onClose={() => setShowMobileNav(false)} signIn={signIn} signOut={(e) => signOut(e)} {...passProps}/>}
+              {showMobileNav && <MobileNav onClose={() => setShowMobileNav(false)} signIn={signIn} signOut={(e) => handleSignOut(e)} {...passProps} signedAccount={signedAccountId}/>}
             </MobileView> }
           </div>
         </header>
@@ -300,4 +329,3 @@ function App (props) {
 }
 
 export default App;
-

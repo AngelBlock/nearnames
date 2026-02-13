@@ -123,6 +123,35 @@ export const wrapWithTimeout = (promise, timeout_ms) => {
 
 export const withTimeout = (promise) => wrapWithTimeout(promise, 60_000);
 
+// Creates a contract-like proxy object using wallet-selector's viewFunction/callFunction.
+// Mimics the old nearAPI.Contract interface so child components don't need major refactoring.
+export function makeContractProxy(contractId, viewFunction, callFunction) {
+  const viewMethods = ['lot_list', 'lot_get', 'lot_list_offering_by', 'lot_list_bidding_by', 'profile_get', 'lot_bid_list'];
+  const changeMethods = ['lot_offer', 'lot_reoffer', 'lot_bid', 'lot_claim', 'profile_rewards_claim', 'lot_withdraw'];
+
+  const proxy = {};
+  for (const method of viewMethods) {
+    proxy[method] = (args) => viewFunction({ contractId, method, args: args || {} });
+  }
+  for (const method of changeMethods) {
+    proxy[method] = (argsOrParams, gas) => {
+      // Handle both calling conventions used in the codebase:
+      // 1. contract.method({args, gas, amount, callbackUrl})  (e.g., lot_bid)
+      // 2. contract.method(args, gas)  (e.g., profile_rewards_claim, lot_claim)
+      if (argsOrParams && argsOrParams.args !== undefined) {
+        return callFunction({
+          contractId, method,
+          args: argsOrParams.args,
+          gas: argsOrParams.gas,
+          deposit: argsOrParams.amount,
+        });
+      }
+      return callFunction({ contractId, method, args: argsOrParams || {}, gas });
+    };
+  }
+  return proxy;
+}
+
 export const loadListPaginated = async (callback, limit = 200) => {
   let result = [];
   let offset = 0;
