@@ -2,9 +2,14 @@ import React, {useEffect, useState} from 'react';
 import Loader from './Loader';
 import {BOATLOAD_OF_GAS, nearToFloor, renderName, loadListPaginated, fetchBidSafety} from "../utils";
 import LotsList from "./LotsList";
+import { useNear } from "../Hooks/useNear";
+import { useAuth } from "../Hooks/useAuth";
 
-function Profile (props) {
-  const profileId = props.signedAccount;
+function Profile () {
+  const { contract, legacyNear, nearConfig } = useNear();
+  const { signedAccountId, updateBalance } = useAuth();
+  const profileId = signedAccountId;
+
   const [profile, setProfile] = useState([]);
   const [lotsOffering, setLotsOffering] = useState([]);
   const [lotsBidding, setLotsBidding] = useState([]);
@@ -15,8 +20,6 @@ function Profile (props) {
   const [lotsWonLoader, setLotsWonLoader] = useState(false);
   const [claimLoader, setClaimLoader] = useState(false);
 
-  const contract = props.contract;
-
   const lotsChecked = async (lotsMemo) => {
 
     if (!lotsMemo.length) {
@@ -24,7 +27,7 @@ function Profile (props) {
     }
 
     await Promise.all(lotsMemo.map(async (l) => {
-      const isSafe = await fetchBidSafety(l.lot_id, props.near, props.nearConfig);
+      const isSafe = await fetchBidSafety(l.lot_id, legacyNear, nearConfig);
       l.notSafe = !isSafe;
     }));
 
@@ -124,7 +127,7 @@ function Profile (props) {
   }
 
   const putLotOffering = async (lot) => {
-    const isSafe = await fetchBidSafety(lot.lot_id, props.near, props.nearConfig);
+    const isSafe = await fetchBidSafety(lot.lot_id, legacyNear, nearConfig);
     lot.notSafe = !isSafe;
     const updatedLots = lotsOffering.map((l) => {
       if (lot && l.lot_id === lot.lot_id) {
@@ -136,7 +139,7 @@ function Profile (props) {
   }
 
   const putLotBidding = async (lot) => {
-    const isSafe = await fetchBidSafety(lot.lot_id, props.near, props.nearConfig);
+    const isSafe = await fetchBidSafety(lot.lot_id, legacyNear, nearConfig);
     lot.notSafe = !isSafe;
     const updatedLots = [...lotsWon, ...lotsBidding].map((l) => {
       if (l.lot_id === lot.lot_id) {
@@ -168,7 +171,7 @@ function Profile (props) {
       await contract.profile_rewards_claim({}, BOATLOAD_OF_GAS).then(() => {
         contract.profile_get({profile_id: profileId}).then(async (profile) => {
           setProfile(profile);
-          await props.updateBalance();
+          await updateBalance();
           setClaimLoader(false);
         });
       });
@@ -189,9 +192,9 @@ function Profile (props) {
           <div className="profile-block"><strong>Claimed:</strong> <span className="rewards near-icon">{nearToFloor(profile.rewards_claimed)}</span></div>
           <button className="claim-rewards" disabled={!parseFloat(profile.rewards_available) || claimLoader} onClick={(e) => claim(e)}>{claimLoader ? 'Claiming...' : 'Claim rewards'}</button>
         </div>
-        <LotsList lots={lotsOffering} getLots={getLotsOffering} putLot={putLotOffering} showStatus={true} loader={lotsOfferLoader} name={' you are selling'} {...props}/>
-        <LotsList lots={lotsBidding} getLots={getLotsBidding} putLot={putLotBidding} showStatus={true} loader={lotsBidLoader} name={' you are bidding on'} {...props}/>
-        <LotsList lots={lotsWon} getLots={getLotsWon} putLot={putLotBidding} showStatus={true} loader={lotsWonLoader} name={' you won'} {...props}/>
+        <LotsList lots={lotsOffering} getLots={getLotsOffering} putLot={putLotOffering} showStatus={true} loader={lotsOfferLoader} name={' you are selling'}/>
+        <LotsList lots={lotsBidding} getLots={getLotsBidding} putLot={putLotBidding} showStatus={true} loader={lotsBidLoader} name={' you are bidding on'}/>
+        <LotsList lots={lotsWon} getLots={getLotsWon} putLot={putLotBidding} showStatus={true} loader={lotsWonLoader} name={' you won'}/>
       </div> :
       <div className="profile-container">
         <h5 className="profile-name"><strong>Profile not found</strong></h5>

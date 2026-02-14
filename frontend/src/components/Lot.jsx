@@ -5,13 +5,16 @@ import Countdown from "react-countdown";
 import AccessTimeFilledIcon from '@mui/icons-material/AccessTimeFilled';
 import { isBrowser, isMobile } from 'react-device-detect';
 import { LOT_STATUS } from "../statusMap";
+import { useAuth } from "../Hooks/useAuth";
 
 function Lot(props) {
 
   const [lotNameExpanded, setLotNameExpanded] = useState(false);
 
+  const { signedAccountId, signIn } = useAuth();
+
   const lot = props.lot;
-  const accountId = props.signedAccount;
+  const accountId = signedAccountId;
   const isNotSeller = accountId !== lot.seller_id;
   const isLastBidder = accountId === lot.last_bidder_id;
 
@@ -26,7 +29,7 @@ function Lot(props) {
         if (!accountId) {
           return (
             <div className="button_wrapper">
-              <button name="login" className="outlined" onClick={(e) => props.signIn()}>Log in to buy</button>
+              <button name="login" className="outlined" onClick={(e) => signIn()}>Log in to buy</button>
             </div>
           )
         }

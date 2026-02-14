@@ -4,6 +4,7 @@ import Loader from "./Loader";
 import {BOATLOAD_OF_GAS, renderName} from "../utils";
 import {Modal, Box, IconButton} from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import { useNear } from "../Hooks/useNear";
 
 function ModalClaim(props) {
 
@@ -15,11 +16,13 @@ function ModalClaim(props) {
 
   const seedPhraseRef = useRef(null);
   const publicKeyRef = useRef(null);
+
+  const { contract, nearConfig } = useNear();
   const lot_id = props.lot && props.lot.lot_id;
-  const recoverLink = props.config.walletUrl + '/recover-seed-phrase'
+  const recoverLink = nearConfig.walletUrl + '/recover-seed-phrase'
 
   const claimLot = async (publicKey) => {
-    await props.contract.lot_claim({'lot_id': lot_id, 'public_key': publicKey}, BOATLOAD_OF_GAS).then((lot) => {
+    await contract.lot_claim({'lot_id': lot_id, 'public_key': publicKey}, BOATLOAD_OF_GAS).then((lot) => {
       setShowLoader(false);
       setShowSuccess(true);
       setPublicKey(publicKey);

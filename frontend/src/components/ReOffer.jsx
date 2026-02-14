@@ -12,6 +12,7 @@ import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownR
 import useConfirm from "../Hooks/useConfirm";
 import Loader from "./Loader";
 import Alert from "@mui/material/Alert";
+import { useNear } from "../Hooks/useNear";
 
 function Offer (props) {
 
@@ -27,6 +28,7 @@ function Offer (props) {
   const priceRef = useRef(null);
   const buyPriceRef = useRef(null);
 
+  const { contract } = useNear();
   const lot_id = props.lot && props.lot.lot_id;
 
   const handleDurationChange = (event) => {
@@ -74,7 +76,7 @@ function Offer (props) {
     };
 
     setShowLoader(true);
-    await props.contract.lot_reoffer(offerData);
+    await contract.lot_reoffer(offerData);
     await props.getLot(lot_id);
     setShowLoader(false);
     setShowSuccess(true);

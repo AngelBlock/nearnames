@@ -4,10 +4,11 @@ import SearchIcon from '@mui/icons-material/Search';
 import {fetchBidSafety, loadListPaginated} from '../utils';
 import {ToggleButton, ToggleButtonGroup} from "@mui/material";
 import {isDesktop} from "react-device-detect";
+import { useNear } from "../Hooks/useNear";
 
-function Lots(props) {
+function Lots() {
 
-  const contract = props.contract;
+  const { contract, legacyNear, nearConfig } = useNear();
 
   const initStatus = ['OnSale', 'SaleSuccess'];
 
@@ -33,7 +34,7 @@ function Lots(props) {
     console.time('lots check');
 
     await Promise.all(result.map(async (l) => {
-      const isSafe = await fetchBidSafety(l.lot_id, props.near, props.nearConfig);
+      const isSafe = await fetchBidSafety(l.lot_id, legacyNear, nearConfig);
       l.notSafe = !isSafe;
     }));
 
@@ -44,7 +45,7 @@ function Lots(props) {
   }
 
   const putLot = async (lot) => {
-    const isSafe = await fetchBidSafety(lot.lot_id, props.near, props.nearConfig);
+    const isSafe = await fetchBidSafety(lot.lot_id, legacyNear, nearConfig);
     lot.notSafe = !isSafe;
     const updatedLots = lots.map((l) => {
       if (l.lot_id === lot.lot_id) {
@@ -102,7 +103,7 @@ function Lots(props) {
           <ToggleButton value="SaleSuccess">Finished</ToggleButton>
         </ToggleButtonGroup>
       </div>
-      <LotsList lots={lots} getLots={getLots} putLot={putLot} signIn={props.signIn} showStatus={true} loader={loader} {...props} />
+      <LotsList lots={lots} getLots={getLots} putLot={putLot} showStatus={true} loader={loader}/>
     </div>
   );
 }

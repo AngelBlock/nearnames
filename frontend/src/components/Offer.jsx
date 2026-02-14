@@ -16,6 +16,8 @@ import ModalAlert from "./Alert";
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
 import useConfirm from "../Hooks/useConfirm";
 import Alert from "@mui/material/Alert";
+import { useNear } from "../Hooks/useNear";
+import { useAuth } from "../Hooks/useAuth";
 
 function Offer (props) {
 
@@ -31,6 +33,9 @@ function Offer (props) {
   const [duration, setDuration] = useState(24);
   const {register, formState: { errors }, handleSubmit} = useForm();
   const { isConfirmed } = useConfirm();
+
+  const { nearConfig, contract, legacyNear, legacyWallet, lsPrevKeys, lsLotAccountId } = useNear();
+  const { signedAccountId } = useAuth();
 
   const lotRef = useRef(null);
   const sellerRef = useRef(null);
@@ -92,8 +97,8 @@ function Offer (props) {
 
     const { fieldset, lot_id, seller_id, reserve_price, buy_now_price } = e.target.elements;
 
-    if (props.signedAccount) {
-      props.wallet.signOut()
+    if (signedAccountId) {
+      legacyWallet.signOut()
     }
 
     const lot_account_id = lot_id.value.endsWith(accountSuffix) ? lot_id.value.trim() : lot_id.value.trim() + accountSuffix;
@@ -103,7 +108,7 @@ function Offer (props) {
 
     console.log('lot check');
 
-    const account = await props.near.account(lot_account_id);
+    const account = await legacyNear.account(lot_account_id);
     let balance = null;
     try {
       balance = nearToFloor((await account.getAccountBalance()).total);
@@ -136,7 +141,7 @@ function Offer (props) {
 
     console.log('seller check');
 
-    const seller = await props.near.account(seller_account_id);
+    const seller = await legacyNear.account(seller_account_id);
 
     try {
       nearToFloor((await seller.getAccountBalance()).total);
@@ -156,17 +161,17 @@ function Offer (props) {
 
     const accessKeys = await account.getAccessKeys();
 
-    ls.set(props.lsPrevKeys, accessKeys);
-    ls.set(props.lsLotAccountId, lot_account_id);
+    ls.set(lsPrevKeys, accessKeys);
+    ls.set(lsLotAccountId, lot_account_id);
 
-    ls.set(props.nearConfig.contractName + ':lotOffer: ' + lot_account_id,
+    ls.set(nearConfig.contractName + ':lotOffer: ' + lot_account_id,
       JSON.stringify(offerData));
 
     // adding random Full Access Key
 
     await customRequestSigninFullAccess(
-      props.wallet,
-      props.nearConfig.contractName,
+      legacyWallet,
+      nearConfig.contractName,
       window.location.origin + window.location.pathname + '#/offerProcess',
       window.location.origin + window.location.pathname + '#/lots'
     )

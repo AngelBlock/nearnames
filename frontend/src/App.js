@@ -1,8 +1,8 @@
 import 'regenerator-runtime/runtime';
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import * as nearAPI from 'near-api-js';
 import localStorage from 'local-storage';
-import {HashRouter as Router, NavLink, Redirect, Route, Switch} from 'react-router-dom';
+import {HashRouter as Router, NavLink, Navigate, Route, Routes} from 'react-router-dom';
 import OfferProcessPage from './components/OfferProcess';
 import Lots from './components/Lots';
 import ProfilePage from './components/Profile';
@@ -11,6 +11,8 @@ import CreateOffer from "./components/CreateOffer";
 import {nearToFloor, renderName, withTimeout, makeContractProxy} from "./utils";
 import AboutPage from "./components/About";
 import ConfirmContextProvider from "./Providers/ConfirmContextProvider";
+import NearContextProvider from "./Providers/NearContextProvider";
+import AuthContextProvider from "./Providers/AuthContextProvider";
 import ModalConfirm from "./components/Confirm";
 import {IconButton} from "@mui/material";
 import { BrowserView, MobileView, isBrowser, isMobile } from 'react-device-detect';
@@ -76,11 +78,11 @@ function App (props) {
     })();
   }, [signedAccountId]);
 
-  const updateBalance = async () => {
+  const updateBalance = useCallback(async () => {
     if (signedAccountId) {
       setSignedAccountBalance(await getBalance(signedAccountId));
     }
-  }
+  }, [signedAccountId]);
 
   const getBalance = async (accountId) => {
     try {
@@ -92,10 +94,10 @@ function App (props) {
     }
   }
 
-  const handleSignOut = async (withReload) => {
+  const handleSignOut = useCallback(async (withReload) => {
     await walletSelectorSignOut();
     withReload && window.location.replace(window.location.origin + window.location.pathname);
-  };
+  }, [walletSelectorSignOut]);
 
   const initOffer = async() => {
 
@@ -232,23 +234,27 @@ function App (props) {
     }
   }
 
-  const passProps = {
-    connected,
-    signedAccount: signedAccountId,
-    signedAccountBalance,
-    contract,
+  const nearValue = useMemo(() => ({
     nearConfig,
-    near: legacyNear,
-  };
-
-  const offerProps = {
+    contract,
+    legacyNear,
+    legacyWallet,
     lsPrevKeys,
     lsLotAccountId,
-    wallet: legacyWallet,
-    near: legacyNear,
-  }
+  }), [nearConfig, contract, legacyNear, legacyWallet, lsPrevKeys, lsLotAccountId]);
+
+  const authValue = useMemo(() => ({
+    signedAccountId,
+    signedAccountBalance,
+    connected,
+    signIn,
+    signOut: handleSignOut,
+    updateBalance,
+  }), [signedAccountId, signedAccountBalance, connected, signIn, handleSignOut, updateBalance]);
 
   return (
+    <NearContextProvider value={nearValue}>
+    <AuthContextProvider value={authValue}>
     <ConfirmContextProvider>
     <main>
       <Router basename='/'>
@@ -262,18 +268,18 @@ function App (props) {
             { !offerProcessState.offerActive && <BrowserView>
               <ul className='nav'>
                 <li className='nav-item'>
-                  <NavLink activeClassName='active' className='nav-link' aria-current='page' to='/lots'>Lots</NavLink>
+                  <NavLink className={({isActive}) => 'nav-link' + (isActive ? ' active' : '')} aria-current='page' to='/lots'>Lots</NavLink>
                 </li>
               { signedAccountId && (<li className='nav-item'>
-                  <NavLink activeClassName='active' className='nav-link' aria-current='page'
+                  <NavLink className={({isActive}) => 'nav-link' + (isActive ? ' active' : '')} aria-current='page'
                         to='profile'>Profile</NavLink>
                 </li>)}
                 <li className='nav-item'>
-                  <NavLink activeClassName='active' className='nav-link' aria-current='page' to='/about'>About</NavLink>
+                  <NavLink className={({isActive}) => 'nav-link' + (isActive ? ' active' : '')} aria-current='page' to='/about'>About</NavLink>
                 </li>
               </ul>
             </BrowserView>}
-            <CreateOffer {...{...passProps, ...offerProps, signedAccount: signedAccountId}}/>
+            <CreateOffer/>
             { <BrowserView>
               { !connected ? (
                   <div className="auth">
@@ -296,27 +302,17 @@ function App (props) {
               >
                 <MenuRoundedIcon />
               </IconButton>
-              {showMobileNav && <MobileNav onClose={() => setShowMobileNav(false)} signIn={signIn} signOut={(e) => handleSignOut(e)} {...passProps} signedAccount={signedAccountId}/>}
+              {showMobileNav && <MobileNav onClose={() => setShowMobileNav(false)}/>}
             </MobileView> }
           </div>
         </header>
-        <Switch>
-          <Route exact path='/'>
-            <Redirect to='/lots'/>
-          </Route>
-          <Route exact path='/lots'>
-            <Lots {...{...passProps, signIn}}/>
-          </Route>
-          <Route exact path='/offerProcess'>
-            <OfferProcessPage {...{...offerProcessState, offerProcessOutput}} />
-          </Route>
-          <Route exact path='/profile'>
-            <ProfilePage {...{...passProps, updateBalance}}/>
-          </Route>
-          <Route exact path='/about'>
-            <AboutPage/>
-          </Route>
-        </Switch>
+        <Routes>
+          <Route path='/' element={<Navigate to='/lots' replace/>}/>
+          <Route path='/lots' element={<Lots/>}/>
+          <Route path='/offerProcess' element={<OfferProcessPage {...{...offerProcessState, offerProcessOutput}} />}/>
+          <Route path='/profile' element={<ProfilePage/>}/>
+          <Route path='/about' element={<AboutPage/>}/>
+        </Routes>
       </Router>
       <ModalConfirm/>
     </main>
@@ -329,6 +325,8 @@ function App (props) {
       </div>
     </footer>
   </ConfirmContextProvider>
+  </AuthContextProvider>
+  </NearContextProvider>
   )
 }
 

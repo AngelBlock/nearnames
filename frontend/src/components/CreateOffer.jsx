@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import ModalOffer from "./Offer";
 
-function CreateOffer(props) {
+function CreateOffer() {
 
   const [createOfferModalShow, setCreateOfferModalShow] = useState(false)
 
@@ -13,7 +13,6 @@ function CreateOffer(props) {
     <div className="create_offer">
       <button onClick={createOffer}>Create new offer</button>
       <ModalOffer
-        {...props}
         open={createOfferModalShow}
         onClose={() => setCreateOfferModalShow(false)}
       />

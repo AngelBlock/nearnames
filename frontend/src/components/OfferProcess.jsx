@@ -1,6 +1,6 @@
 import React from 'react'
 import Alert from "@mui/material/Alert";
-import { Redirect, Link } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import Loader from "./Loader";
 
 function OfferProcessPage (props) {
@@ -12,7 +12,7 @@ function OfferProcessPage (props) {
   let offerSuccessMessage = props.offerSuccessMessage;
 
   if (!active) {
-    return (<Redirect push to="/"/>)
+    return (<Navigate to="/" replace/>)
   }
 
   return (

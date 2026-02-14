@@ -14,6 +14,8 @@ import AccessTimeFilledIcon from "@mui/icons-material/AccessTimeFilled";
 import Countdown from "react-countdown";
 import Alert from "@mui/material/Alert";
 import Loader from "./Loader";
+import { useNear } from "../Hooks/useNear";
+import { useAuth } from "../Hooks/useAuth";
 
 function ModalBid (props) {
 
@@ -29,8 +31,9 @@ function ModalBid (props) {
   const bidPrice = useRef(null);
 
   const bid = props.bid;
-  const contract = props.contract;
-  const accountId = props.signedAccount;
+  const { contract } = useNear();
+  const { signedAccountId } = useAuth();
+  const accountId = signedAccountId;
   const isNotSeller = accountId !== (lot && lot.seller_id);
 
   const [bids, setBids] = useState([]);

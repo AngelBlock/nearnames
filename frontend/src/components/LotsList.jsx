@@ -9,16 +9,17 @@ import {
   getNextBidAmount,
 } from "../utils";
 import ModalAlert from "./Alert";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import useConfirm from "../Hooks/useConfirm";
 import Loader from "./Loader";
 import ModalOffer from "./ReOffer";
+import { useNear } from "../Hooks/useNear";
+import { useAuth } from "../Hooks/useAuth";
 
 function LotsList(props) {
-  const history = useHistory();
-  const contract = props.contract;
-  const config = props.nearConfig;
-  const signedAccount = props.signedAccount;
+  const navigate = useNavigate();
+  const { contract, nearConfig } = useNear();
+  const { signedAccountId } = useAuth();
   const { isConfirmed } = useConfirm();
 
   const [modalClaimShow, setModalClaimShow] = useState(false);
@@ -33,7 +34,7 @@ function LotsList(props) {
       e.target.disabled = true;
       e.target.innerText = 'Loading...';
       await contract.lot_withdraw({'lot_id': lot.lot_id}, BOATLOAD_OF_GAS);
-      history.push("/profile");
+      navigate("/profile");
     } catch (e) {
       e.target.innerText = 'Withdraw';
       let errorMessage = e.message;
@@ -154,8 +155,8 @@ function LotsList(props) {
         <Loader/> :
         <ul className="lot_list">
           {props.lots.map((lot, i) =>
-            <Lot lot={lot} key={i} contract={contract} showStatus={props.showStatus} signedAccount={signedAccount}
-                 openBid={openBid} signIn={props.signIn} withdraw={withdraw} claim={claimOpen} offer={openOffer}/>
+            <Lot lot={lot} key={i} showStatus={props.showStatus}
+                 openBid={openBid} withdraw={withdraw} claim={claimOpen} offer={openOffer}/>
           )}
           {props.lots.length === 0 ? <li className='lot_item'><div className="lot_info">No lots available</div></li> : ''}
         </ul>
@@ -163,23 +164,18 @@ function LotsList(props) {
       <ModalClaim
         open={modalClaimShow}
         lot={selectedLot}
-        config={config}
-        contract={contract}
         onClose={(claimSuccess) => claimHide(claimSuccess)}
       />
       <ModalBid
         open={modalBidShow}
         lot={selectedLot}
         bid={bid}
-        contract={contract}
-        signedAccount={signedAccount}
         onClose={() => closeBid()}
       />
       <ModalOffer
         lot={selectedLot}
         open={modalOfferShow}
         getLot={getLot}
-        contract={contract}
         onClose={() => closeOffer()}
       />
       <ModalAlert

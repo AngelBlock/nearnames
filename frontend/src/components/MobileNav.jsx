@@ -5,8 +5,11 @@ import CloseIcon from "@mui/icons-material/Close";
 import {nearToFloor, renderName} from "../utils";
 import LogoutIcon from "@mui/icons-material/Logout";
 import NetworkSelect from "./NetworkSelect";
+import { useAuth } from "../Hooks/useAuth";
 
 function MobileNav(props) {
+
+  const { signedAccountId, signedAccountBalance, connected, signIn, signOut } = useAuth();
 
   return (
     <div className="mobile-header">
@@ -27,29 +30,29 @@ function MobileNav(props) {
       <NetworkSelect/>
       <ul className='nav'>
         <li className='nav-item'>
-          <NavLink activeClassName='active' className='nav-link' aria-current='page'
+          <NavLink className={({isActive}) => 'nav-link' + (isActive ? ' active' : '')} aria-current='page'
                    onClick={props.onClose} to='/lots'>Lots</NavLink>
         </li>
-        { props.signedAccount && (<li className='nav-item'>
-          <NavLink activeClassName='active' className='nav-link' aria-current='page'
+        { signedAccountId && (<li className='nav-item'>
+          <NavLink className={({isActive}) => 'nav-link' + (isActive ? ' active' : '')} aria-current='page'
                    onClick={props.onClose} to='profile'>Profile</NavLink>
         </li>)}
         <li className='nav-item'>
-          <NavLink activeClassName='active' className='nav-link' aria-current='page'
+          <NavLink className={({isActive}) => 'nav-link' + (isActive ? ' active' : '')} aria-current='page'
                    onClick={props.onClose} to='/about'>About</NavLink>
         </li>
       </ul>
-      { !props.connected ? (
+      { !connected ? (
         <div className="auth">
           <span className='spinner' role='status' aria-hidden='true'>Connecting...</span>
         </div>
-      ) : props.signedAccount
+      ) : signedAccountId
         ? <div className="auth">
-          <strong className="balance near-icon">{nearToFloor(props.signedAccountBalance) || '-'}</strong>
-          {renderName(props.signedAccount)}
-          <a className="icon logout" onClick={() => props.signOut(true)}><LogoutIcon/></a>
+          <strong className="balance near-icon">{nearToFloor(signedAccountBalance) || '-'}</strong>
+          {renderName(signedAccountId)}
+          <a className="icon logout" onClick={() => signOut(true)}><LogoutIcon/></a>
         </div>
-        : <div className="auth"><button className="login" onClick={props.signIn}>Log in</button></div>
+        : <div className="auth"><button className="login" onClick={signIn}>Log in</button></div>
       }
     </div>
   )
