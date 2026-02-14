@@ -1,4 +1,4 @@
-name: Rust
+name: CI
 
 on:
   push:
@@ -10,44 +10,31 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  contract:
+    name: Contract build & test
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Cache cargo
-      uses: actions/cache@v2.1.7
+      uses: actions/cache@v4
       with:
         path: |
           ~/.cargo/bin/
           ~/.cargo/registry/index/
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
-        key: ${{ runner.os }}-cargo_home-${{ hashFiles('**/Cargo.lock') }}-v7
+        key: ${{ runner.os }}-cargo_home-${{ hashFiles('**/Cargo.lock') }}-v8
     - name: Cache target
-      uses: actions/cache@v2.1.7
+      uses: actions/cache@v4
       with:
         path: |
           contract/target/
-        key: ${{ runner.os }}-contract_target-${{ hashFiles('**/Cargo.lock') }}-v7
-    - name: Cache toolchain
-      uses: actions/cache@v2.1.7
+        key: ${{ runner.os }}-contract_target-${{ hashFiles('**/Cargo.lock') }}-v8
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@master
       with:
-        path: |
-          ~/.rustup/toolchains/
-        key: ${{ runner.os }}-rustup-toolchain-v3
-    #- name: find dirs target 0
-    #  working-directory: contract
-    #  run: find target -type d | sort
-    #- name: find all target 0
-    #  working-directory: contract
-    #  run: find target | sort
-    - name: Install latest nightly
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: 1.56.1
-        target: wasm32-unknown-unknown
-        default: true
-        override: true
+        toolchain: 1.57.0
+        targets: wasm32-unknown-unknown
         components: rustfmt, clippy
     - name: Cargo build
       working-directory: contract
@@ -58,18 +45,24 @@ jobs:
     - name: Cargo test
       working-directory: contract
       run: cargo test -- --nocapture
-    #- name: find dirs target
-    #  working-directory: contract
-    #  run: find target -type d | sort
-    #- name: find all target
-    #  working-directory: contract
-    #  run: find target | sort
-    #- name: Cargo test 2
-    #  working-directory: contract
-    #  run: cargo test -- --nocapture
-    #- name: find dirs target 2
-    #  working-directory: contract
-    #  run: find target -type d | sort
-    #- name: find all target 2
-    #  working-directory: contract
-    #  run: find target | sort
+
+  frontend:
+    name: Frontend build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+        cache: yarn
+        cache-dependency-path: frontend/yarn.lock
+    - name: Install dependencies
+      working-directory: frontend
+      run: yarn install --frozen-lockfile
+    - name: Create dist directory
+      working-directory: frontend
+      run: mkdir -p dist && touch dist/lock_unlock_account_latest.wasm
+    - name: Build
+      working-directory: frontend
+      run: npx parcel build src/index.html --public-url ./
