@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import App from './App';
+import ErrorBoundary from './components/ErrorBoundary';
 import getConfig from './config.js';
 import * as nearAPI from 'near-api-js';
 
@@ -38,13 +39,15 @@ async function initLegacyNear() {
 
 window.nearInitPromise = initLegacyNear().then(({ near, walletConnection }) => {
   ReactDOM.render(
-    <WalletSelectorProvider config={walletSelectorConfig}>
-      <App
-        nearConfig={nearConfig}
-        legacyNear={near}
-        legacyWallet={walletConnection}
-      />
-    </WalletSelectorProvider>,
+    <ErrorBoundary>
+      <WalletSelectorProvider config={walletSelectorConfig}>
+        <App
+          nearConfig={nearConfig}
+          legacyNear={near}
+          legacyWallet={walletConnection}
+        />
+      </WalletSelectorProvider>
+    </ErrorBoundary>,
     document.getElementById('root')
   );
 });

@@ -15,9 +15,9 @@ function AboutPage () {
 
       <h3>Auction flow</h3>
 
-      <img className={clickImage ? 'zoom' : ''} src="https://raw.githubusercontent.com/wiki/galactic3/nearnames/images/auction_flow_success.png" onClick={() => onClickImage()} alt="auction_flow_success"/>
+      <img className={clickImage ? 'zoom' : ''} src="https://raw.githubusercontent.com/wiki/AngelBlock/nearnames/images/auction_flow_success.png" onClick={() => onClickImage()} alt="auction_flow_success"/>
 
-      <p>The sale process is an auction, the account offering the highest price wins. Read more in <a target="_blank" href="https://github.com/galactic3/nearnames/wiki/Auction-flow">Auction Flow</a></p>
+      <p>The sale process is an auction, the account offering the highest price wins. Read more in <a target="_blank" href="https://github.com/AngelBlock/nearnames/wiki/Auction-flow">Auction Flow</a></p>
 
       <h3>Prior art</h3>
 
@@ -36,7 +36,7 @@ function AboutPage () {
 
       <h3>Marketplace contract documentation</h3>
 
-      <p>Detailed description of marketplace contract is in <a target="_blank" href="https://github.com/galactic3/nearnames/wiki/Marketplace-contract">Marketplace contract</a></p>
+      <p>Detailed description of marketplace contract is in <a target="_blank" href="https://github.com/AngelBlock/nearnames/wiki/Marketplace-contract">Marketplace contract</a></p>
     </div>
   )
 }

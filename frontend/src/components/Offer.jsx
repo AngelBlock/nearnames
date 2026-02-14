@@ -285,7 +285,7 @@ function Offer (props) {
             </div>
             <div className='form-group confirmation'>
               <label>
-                <p>The app takes 10% fee of all rewards paid to the seller. <a href="https://github.com/galactic3/nearnames/wiki/Money-flow" target="_blank">Read more</a></p>
+                <p>The app takes 10% fee of all rewards paid to the seller. <a href="https://github.com/AngelBlock/nearnames/wiki/Money-flow" target="_blank">Read more</a></p>
                 <p>To ensure that buyer will receive control over the account after the sale, we require lot account to give control over itself to the marketplace contract. After full access is given, UI:</p>
                 <ul className="default">
                   <li>deploys lock contract to lot account</li>

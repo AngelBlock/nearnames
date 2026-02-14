@@ -155,9 +155,11 @@ function Profile (props) {
     })
   }
 
-  useEffect(async () => {
-    await contract.profile_get({profile_id: profileId}).then(setProfile);
-    setLoader(false);
+  useEffect(() => {
+    (async () => {
+      await contract.profile_get({profile_id: profileId}).then(setProfile);
+      setLoader(false);
+    })();
   }, []);
 
   const claim = async () => {

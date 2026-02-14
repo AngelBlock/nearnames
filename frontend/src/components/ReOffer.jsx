@@ -168,7 +168,7 @@ function Offer (props) {
               </div>
               <div className='form-group confirmation'>
                 <label>
-                  <p>The app takes 10% fee of all rewards paid to the seller. <a href="https://github.com/galactic3/nearnames/wiki/Money-flow" target="_blank">Read more</a></p>
+                  <p>The app takes 10% fee of all rewards paid to the seller. <a href="https://github.com/AngelBlock/nearnames/wiki/Money-flow" target="_blank">Read more</a></p>
                 </label>
                 <div className="input-checkbox">
                   <input

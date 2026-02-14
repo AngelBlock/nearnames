@@ -57,19 +57,23 @@ function App (props) {
     [nearConfig.contractName, viewFunction, callFunction]
   );
 
-  useEffect(async () => {
-    await initOffer();
-    setConnected(true);
+  useEffect(() => {
+    (async () => {
+      await initOffer();
+      setConnected(true);
+    })();
   }, []);
 
   // Update balance when signed account changes
-  useEffect(async () => {
-    if (signedAccountId) {
-      const balance = await getBalance(signedAccountId);
-      setSignedAccountBalance(balance);
-    } else {
-      setSignedAccountBalance(null);
-    }
+  useEffect(() => {
+    (async () => {
+      if (signedAccountId) {
+        const balance = await getBalance(signedAccountId);
+        setSignedAccountBalance(balance);
+      } else {
+        setSignedAccountBalance(null);
+      }
+    })();
   }, [signedAccountId]);
 
   const updateBalance = async () => {
