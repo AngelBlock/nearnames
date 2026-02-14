@@ -28,28 +28,27 @@ function LotsList(props) {
   const [modalAlertShow, setModalAlertShow] = useState(false);
   const [alertContent, setAlertContent] = useState('');
   const [selectedLot, setSelectedLot] = useState('');
+  const [withdrawingLotId, setWithdrawingLotId] = useState(null);
+  const [biddingLotId, setBiddingLotId] = useState(null);
 
-  const withdraw = async (lot, e) => {
+  const withdraw = async (lot) => {
     try {
-      e.target.disabled = true;
-      e.target.innerText = 'Loading...';
+      setWithdrawingLotId(lot.lot_id);
       await contract.lot_withdraw({'lot_id': lot.lot_id}, BOATLOAD_OF_GAS);
       navigate("/profile");
-    } catch (e) {
-      e.target.innerText = 'Withdraw';
-      let errorMessage = e.message;
-      if (e.message.includes('expected no bids')) {
+    } catch (err) {
+      let errorMessage = err.message;
+      if (err.message.includes('expected no bids')) {
         errorMessage = "You can't withdraw because the lot had already bids";
       }
-      if (e.message.includes('already withdrawn')) {
+      if (err.message.includes('already withdrawn')) {
         errorMessage = "The lot has already been withdrawn";
       }
       alertOpen(errorMessage);
-      e.target.innerText = 'Withdraw';
-      console.error(e);
+      console.error(err);
     } finally {
       await getLot(lot.lot_id);
-      e.target.disabled = false;
+      setWithdrawingLotId(null);
     }
   };
 
@@ -112,16 +111,19 @@ function LotsList(props) {
   }
 
   const bid = async (e, lotId, value) => {
+    setBiddingLotId(lotId);
     e.target.disabled = true;
     const lot = await getLot(lotId);
     if (lot.status !== 'OnSale') {
       alertOpen('Sorry lot no longer on sale');
+      setBiddingLotId(null);
       e.target.disabled = false;
       return;
     }
     const bid_price = toNear(value);
     if (bid_price && toNear(getNextBidAmount(lot)).cmp(bid_price) > 0) {
       alertOpen('Sorry lot next bid has changed');
+      setBiddingLotId(null);
       e.target.disabled = false;
       return;
     }
@@ -131,6 +133,7 @@ function LotsList(props) {
         'Are you sure you want to bid?'
       );
       if(!isConfirm) {
+        setBiddingLotId(null);
         e.target.disabled = false;
         return;
       }
@@ -154,9 +157,11 @@ function LotsList(props) {
       { props.loader ?
         <Loader/> :
         <ul className="lot_list">
-          {props.lots.map((lot, i) =>
-            <Lot lot={lot} key={i} showStatus={props.showStatus}
-                 openBid={openBid} withdraw={withdraw} claim={claimOpen} offer={openOffer}/>
+          {props.lots.map((lot) =>
+            <Lot lot={lot} key={lot.lot_id} showStatus={props.showStatus}
+                 openBid={openBid} withdraw={withdraw} claim={claimOpen} offer={openOffer}
+                 withdrawing={withdrawingLotId === lot.lot_id}
+                 bidding={biddingLotId === lot.lot_id}/>
           )}
           {props.lots.length === 0 ? <li className='lot_item'><div className="lot_info">No lots available</div></li> : ''}
         </ul>

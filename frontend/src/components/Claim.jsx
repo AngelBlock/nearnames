@@ -42,7 +42,6 @@ function ModalClaim(props) {
   const claimByPublicKey = async (e) => {
     e.preventDefault()
     const publicKey = publicKeyRef.current.value;
-    console.log(publicKey);
     await claimLot(publicKey);
   }
 

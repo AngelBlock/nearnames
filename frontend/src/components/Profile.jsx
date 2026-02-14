@@ -39,8 +39,6 @@ function Profile () {
 
     let lotsMemo = [];
 
-    console.time('lots offer fetch');
-
     setLotsOfferLoader(true);
 
     await loadListPaginated(
@@ -52,15 +50,9 @@ function Profile () {
 
     setLotsOfferLoader(false);
 
-    console.timeEnd('lots offer fetch');
-
-    console.time('lots offer check');
-
     const checked = await lotsChecked(lotsMemo);
 
     setLotsOffering([...checked]);
-
-    console.timeEnd('lots offer check');
 
   }
 
@@ -69,8 +61,6 @@ function Profile () {
     let lotsMemo = [];
 
     setLotsBidLoader(true);
-
-    console.time('lots bid fetch');
 
     await loadListPaginated(
       args => contract.lot_list_bidding_by({ profile_id: profileId, ...args }),
@@ -83,23 +73,15 @@ function Profile () {
 
     setLotsBidLoader(false);
 
-    console.timeEnd('lots bid fetch');
-
-    console.time('lots bid check');
-
     const checked = await lotsChecked(lotsMemo);
 
     setLotsBidding([...checked]);
-
-    console.timeEnd('lots bid check');
 
   }
 
   const getLotsWon = async () => {
 
     let lotsMemo = [];
-
-    console.time('lots won fetch');
 
     setLotsWonLoader(true);
 
@@ -114,15 +96,9 @@ function Profile () {
 
     setLotsWonLoader(false);
 
-    console.timeEnd('lots won fetch');
-
-    console.time('lots won check');
-
     const checked = await lotsChecked(lotsMemo);
 
     setLotsWon([...checked]);
-
-    console.timeEnd('lots won check');
 
   }
 

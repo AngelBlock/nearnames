@@ -56,7 +56,6 @@
     "@near-wallet-selector/my-near-wallet": "^10.1.4",
     "@near-wallet-selector/react-hook": "^10.1.4",
     "@near-wallet-selector/sender": "^10.1.4",
-    "@types/react": "^16.8.6 || ^17.0.0",
     "big.js": "^6.1.1",
     "bootstrap": "5.1.3",
     "local-storage": "^2.0.0",
@@ -67,10 +66,8 @@
     "react-device-detect": "^2.1.2",
     "react-dom": ">=16.8",
     "react-hook-form": "^7.22.5",
-    "react-is": "^17.0.2",
     "react-router-dom": "^6.28.0",
-    "regenerator-runtime": "~0.13.5",
-    "swr": "^1.1.0"
+    "regenerator-runtime": "~0.13.5"
   },
   "resolutions": {
     "@babel/preset-env": "7.13.8",

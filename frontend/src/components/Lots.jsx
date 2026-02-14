@@ -18,8 +18,6 @@ function Lots() {
 
     setLoader(true);
 
-    console.time('lots fetch');
-
     await loadListPaginated(args => contract.lot_list(args)).then(async (lots) => {
       result = lots.filter((lot) => {
         return initStatus.includes(lot.status);
@@ -29,18 +27,12 @@ function Lots() {
     })
     setLoader(false);
 
-    console.timeEnd('lots fetch');
-
-    console.time('lots check');
-
     await Promise.all(result.map(async (l) => {
       const isSafe = await fetchBidSafety(l.lot_id, legacyNear, nearConfig);
       l.notSafe = !isSafe;
     }));
 
     setLots([...result]);
-
-    console.timeEnd('lots check');
 
   }
 

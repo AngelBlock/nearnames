@@ -24,8 +24,11 @@ import { useWalletSelector } from "@near-wallet-selector/react-hook";
 function App (props) {
 
   const nearConfig = props.nearConfig;
-  const legacyNear = props.legacyNear;
-  const legacyWallet = props.legacyWallet;
+
+  // Legacy near-api-js connection state (initialized async on mount).
+  // Only needed for the Offer flow (requires full access key sign-in).
+  const [legacyNear, setLegacyNear] = useState(null);
+  const [legacyWallet, setLegacyWallet] = useState(null);
 
   const {
     signedAccountId,
@@ -59,12 +62,25 @@ function App (props) {
     [nearConfig.contractName, viewFunction, callFunction]
   );
 
+  // Phase 1: Initialize legacy near-api-js connection
   useEffect(() => {
+    (async () => {
+      const keyStore = new nearAPI.keyStores.BrowserLocalStorageKeyStore();
+      const near = await nearAPI.connect({ keyStore, ...nearConfig });
+      const walletConnection = new nearAPI.WalletConnection(near, nearConfig.contractName);
+      setLegacyNear(near);
+      setLegacyWallet(walletConnection);
+    })();
+  }, []);
+
+  // Phase 2: Run offer init once legacy NEAR is ready
+  useEffect(() => {
+    if (!legacyNear || !legacyWallet) return;
     (async () => {
       await initOffer();
       setConnected(true);
     })();
-  }, []);
+  }, [legacyNear, legacyWallet]);
 
   // Update balance when signed account changes
   useEffect(() => {
@@ -131,7 +147,6 @@ function App (props) {
     // should never happen
     const offerData = JSON.parse(localStorage.get(nearConfig.contractName + ':lotOffer: ' + legacySignedAccount));
     if (!offerData) {
-      console.log(`failed to parse lot offer data`);
       localStorage.remove(lsLotAccountId);
       const newState = {
         offerFinished: true,
@@ -154,10 +169,6 @@ function App (props) {
 
       const accessKeys = await withTimeout(legacyWallet.account().getAccessKeys());
 
-      console.log('all keys', accessKeys);
-      console.log('all local keys', legacyWallet._authData.allKeys);
-      console.log('last key', lastKey);
-
       setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'fetching contract']);
 
       const data = await withTimeout(fetch('/lock_unlock_account_latest.wasm'));
@@ -174,13 +185,9 @@ function App (props) {
       }));
 
       setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'Deploying done. Initializing contract...']);
-      console.log('Deploying done. Initializing contract...');
-      console.log(await withTimeout(contractLock.lock(Buffer.from('{"owner_id":"' + nearConfig.contractName + '"}'))));
+      await withTimeout(contractLock.lock(Buffer.from('{"owner_id":"' + nearConfig.contractName + '"}')));
 
       setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'Init is done.']);
-      console.log('Init is done.');
-
-      console.log('code hash', (await withTimeout(account.state())).code_hash);
 
       setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'Create lot offer.']);
 
@@ -193,17 +200,13 @@ function App (props) {
       for (let index = 0; index < accessKeys.length; index++) {
         if (accessKeys[index].public_key !== lastKey) {
           setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'deleting ' + accessKeys[index].public_key]);
-          console.log('deleting ', accessKeys[index]);
           await withTimeout(account.deleteKey(accessKeys[index].public_key));
-          console.log('deleting ', accessKeys[index], 'done');
         }
       }
 
       setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'deleting last key ' + lastKey]);
-      console.log('deleting last key', lastKey);
       await withTimeout(account.deleteKey(lastKey));
       setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'deleting done']);
-      console.log('deleting ', lastKey, 'done');
 
       localStorage.remove(nearConfig.contractName + ':lotOffer: ' + legacySignedAccount);
       localStorage.remove(lsLotAccountId);
@@ -216,7 +219,6 @@ function App (props) {
       setOfferProcessState(offerProcessState => ({...offerProcessState, ...newState}));
       legacyWallet.signOut();
     } catch (e) {
-      console.log('Error', e)
       let offerFailureReason = '';
       e = e.toString();
       if (e === 'timeout_reached' || e === 'TypeError: NetworkError when attempting to fetch resource.') {
@@ -229,8 +231,6 @@ function App (props) {
         offerFailureReason
       };
       setOfferProcessState(offerProcessState => ({...offerProcessState, ...newState}));
-    } finally {
-      console.log('init offer finish');
     }
   }
 

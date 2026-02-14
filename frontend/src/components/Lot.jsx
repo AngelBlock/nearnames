@@ -23,7 +23,9 @@ function Lot(props) {
       case 'OnSale':
         if (!isNotSeller && !lot.last_bidder_id) {
           return (<div className="button_wrapper">
-            <button name="withdraw" className="outlined" onClick={(e) => props.withdraw(lot, e)}>Withdraw</button>
+            <button name="withdraw" className="outlined" disabled={props.withdrawing} onClick={() => props.withdraw(lot)}>
+              {props.withdrawing ? 'Loading...' : 'Withdraw'}
+            </button>
           </div>);
         }
         if (!accountId) {
@@ -45,7 +47,9 @@ function Lot(props) {
         </div>)
       case 'SaleFailure':
         return (!isNotSeller && <div className="button_wrapper">
-          <button name="withdraw" className="outlined" onClick={(e) => props.withdraw(lot, e)}>Withdraw</button>
+          <button name="withdraw" className="outlined" disabled={props.withdrawing} onClick={() => props.withdraw(lot)}>
+            {props.withdrawing ? 'Loading...' : 'Withdraw'}
+          </button>
         </div>)
       case 'Withdrawn':
         return (!isNotSeller && <div className="button_wrapper">

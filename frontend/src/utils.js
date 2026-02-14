@@ -32,7 +32,6 @@ export const MIN_RESERVE_PRICE = 0.6;
 export const customRequestSigninFullAccess = async (connection, contractIdOrOptions, successUrl, failureUrl) => {
   let options;
   if (typeof contractIdOrOptions === 'string') {
-    console.log('`title` ignored; use `requestSignIn({ contractId, methodNames, successUrl, failureUrl })` instead');
     options = { contractId: contractIdOrOptions, successUrl, failureUrl };
   }
   else {
@@ -104,12 +103,8 @@ export const fetchBidSafety = async (lot_id, near, nearConfig) => {
     isSafe = LOCK_CONTRACT_HASHES.includes(codeHash) &&
       accessKeysLen === 0 &&
       lockerOwner === nearConfig.contractName;
-    console.log(codeHash, accessKeysLen, lockerOwner);
-    if (!isSafe) {
-      console.log(lot_id + ' account is not safe');
-    }
   } catch (e) {
-    console.log('check safety error', e)
+    console.error('check safety error', e)
   }
 
   return isSafe;
@@ -158,7 +153,6 @@ export const loadListPaginated = async (callback, limit = 200) => {
 
   while (true) {
     let part = await callback({ limit, offset });
-    console.log("paginateContractCall", { limit, offset });
     result.push(...part);
     offset += limit;
 

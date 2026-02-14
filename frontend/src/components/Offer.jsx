@@ -106,8 +106,6 @@ function Offer (props) {
 
     fieldset.disabled = true;
 
-    console.log('lot check');
-
     const account = await legacyNear.account(lot_account_id);
     let balance = null;
     try {
@@ -138,8 +136,6 @@ function Offer (props) {
         return;
       }
     }
-
-    console.log('seller check');
 
     const seller = await legacyNear.account(seller_account_id);
 
