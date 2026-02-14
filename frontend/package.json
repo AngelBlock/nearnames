@@ -69,6 +69,10 @@
     "react-router-dom": "^6.28.0",
     "regenerator-runtime": "~0.13.5"
   },
+  "alias": {
+    "react-dom/client": "./src/react-dom-client-shim.js",
+    "zod": "./src/zod-shim.js"
+  },
   "resolutions": {
     "@babel/preset-env": "7.13.8",
     "@near-wallet-selector/meteor-wallet/**/near-api-js": "5.1.1"
