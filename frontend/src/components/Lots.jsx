@@ -27,18 +27,21 @@ function Lots() {
     })
     setLoader(false);
 
-    await Promise.all(result.map(async (l) => {
-      const isSafe = await fetchBidSafety(l.lot_id, legacyNear, nearConfig);
-      l.notSafe = !isSafe;
-    }));
-
-    setLots([...result]);
+    if (legacyNear) {
+      await Promise.all(result.map(async (l) => {
+        const isSafe = await fetchBidSafety(l.lot_id, legacyNear, nearConfig);
+        l.notSafe = !isSafe;
+      }));
+      setLots([...result]);
+    }
 
   }
 
   const putLot = async (lot) => {
-    const isSafe = await fetchBidSafety(lot.lot_id, legacyNear, nearConfig);
-    lot.notSafe = !isSafe;
+    if (legacyNear) {
+      const isSafe = await fetchBidSafety(lot.lot_id, legacyNear, nearConfig);
+      lot.notSafe = !isSafe;
+    }
     const updatedLots = lots.map((l) => {
       if (l.lot_id === lot.lot_id) {
         return lot;

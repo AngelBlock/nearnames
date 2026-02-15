@@ -70,6 +70,8 @@
     "regenerator-runtime": "~0.13.5"
   },
   "alias": {
+    "react": "./node_modules/react",
+    "react-dom": "./node_modules/react-dom",
     "react-dom/client": "./src/react-dom-client-shim.js",
     "zod": "./src/zod-shim.js"
   },

@@ -101,6 +101,7 @@ function App (props) {
   }, [signedAccountId]);
 
   const getBalance = async (accountId) => {
+    if (!legacyNear) return null;
     try {
       const account = await legacyNear.account(accountId);
       const balance = await account.getAccountBalance();

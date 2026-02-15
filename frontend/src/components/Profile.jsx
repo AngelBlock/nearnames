@@ -22,8 +22,8 @@ function Profile () {
 
   const lotsChecked = async (lotsMemo) => {
 
-    if (!lotsMemo.length) {
-      return [];
+    if (!lotsMemo.length || !legacyNear) {
+      return lotsMemo;
     }
 
     await Promise.all(lotsMemo.map(async (l) => {
@@ -103,8 +103,10 @@ function Profile () {
   }
 
   const putLotOffering = async (lot) => {
-    const isSafe = await fetchBidSafety(lot.lot_id, legacyNear, nearConfig);
-    lot.notSafe = !isSafe;
+    if (legacyNear) {
+      const isSafe = await fetchBidSafety(lot.lot_id, legacyNear, nearConfig);
+      lot.notSafe = !isSafe;
+    }
     const updatedLots = lotsOffering.map((l) => {
       if (lot && l.lot_id === lot.lot_id) {
         return lot;
@@ -115,8 +117,10 @@ function Profile () {
   }
 
   const putLotBidding = async (lot) => {
-    const isSafe = await fetchBidSafety(lot.lot_id, legacyNear, nearConfig);
-    lot.notSafe = !isSafe;
+    if (legacyNear) {
+      const isSafe = await fetchBidSafety(lot.lot_id, legacyNear, nearConfig);
+      lot.notSafe = !isSafe;
+    }
     const updatedLots = [...lotsWon, ...lotsBidding].map((l) => {
       if (l.lot_id === lot.lot_id) {
         return lot;
