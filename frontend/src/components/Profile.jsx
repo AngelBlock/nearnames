@@ -139,11 +139,15 @@ function Profile () {
   }
 
   useEffect(() => {
+    if (!profileId) {
+      setLoader(false);
+      return;
+    }
     (async () => {
       await contract.profile_get({profile_id: profileId}).then(setProfile);
       setLoader(false);
     })();
-  }, []);
+  }, [profileId]);
 
   const claim = async () => {
     setClaimLoader(true);
@@ -161,6 +165,16 @@ function Profile () {
     }
   };
 
+
+  if (!profileId) {
+    return (
+      <div className="container">
+        <div className="profile-container">
+          <h5 className="profile-name"><strong>Please sign in to view your profile</strong></h5>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container">

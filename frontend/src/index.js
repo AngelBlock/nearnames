@@ -15,7 +15,10 @@ import "@near-wallet-selector/modal-ui/styles.css";
 const nearConfig = getConfig(process.env.NODE_ENV || 'testnet');
 
 const walletSelectorConfig = {
-  network: nearConfig.networkId,
+  network: {
+    networkId: nearConfig.networkId,
+    nodeUrl: nearConfig.nodeUrl,
+  },
   modules: [
     setupMyNearWallet(),
     setupHereWallet(),

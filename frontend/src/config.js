@@ -8,7 +8,7 @@ function getConfig(env) {
     return {
       networkId: 'mainnet',
       suffix: 'near',
-      nodeUrl: 'https://rpc.mainnet.near.org',
+      nodeUrl: 'https://rpc.fastnear.com',
       contractName: CONTRACT_NAME,
       walletUrl: 'https://wallet.near.org',
       helperUrl: 'https://helper.mainnet.near.org',
@@ -19,7 +19,7 @@ function getConfig(env) {
     return {
       networkId: 'testnet',
       suffix: 'testnet',
-      nodeUrl: 'https://rpc.testnet.near.org',
+      nodeUrl: 'https://test.rpc.fastnear.com',
       contractName: CONTRACT_NAME,
       walletUrl: 'https://wallet.testnet.near.org',
       helperUrl: 'https://helper.testnet.near.org',

@@ -104,7 +104,7 @@ export const fetchBidSafety = async (lot_id, near, nearConfig) => {
       accessKeysLen === 0 &&
       lockerOwner === nearConfig.contractName;
   } catch (e) {
-    console.error('check safety error', e)
+    // Expected for lots without lock contract — isSafe stays false
   }
 
   return isSafe;
